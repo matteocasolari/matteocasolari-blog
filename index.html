@@ -1,23 +1,126 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Matteo Casolari — Blog</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matteo Casolari</title>
+<meta name="description" content="Notes, essays, and experiments by Matteo Casolari.">
+
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #666;
+    --bg: #fdfdfd;
+    --rule: #e4e4e4;
+    --accent: #c0392b;
+    --link: #2563eb;
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  main { max-width: 740px; margin: 0 auto; padding: 4em 1.2em 5em; }
+
+  header { margin-bottom: 3.5em; }
+  h1 {
+    font-size: 2.1em;
+    line-height: 1.2;
+    margin: 0 0 0.15em;
+    letter-spacing: -0.01em;
+  }
+  .tagline {
+    color: var(--muted);
+    margin: 0;
+    font-size: 1.1em;
+  }
+
+  h2 {
+    font-size: 1.05em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 1.4em;
+  }
+
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .posts { list-style: none; padding: 0; margin: 0; }
+  .posts li {
+    padding: 1.4em 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .posts li:first-child { padding-top: 0; }
+  .posts li:last-child { border-bottom: none; }
+
+  .post-link {
+    display: block;
+    color: inherit;
+  }
+  .post-link:hover { text-decoration: none; }
+  .post-link:hover .post-title { color: var(--link); }
+
+  .post-title {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin: 0 0 0.25em;
+    letter-spacing: -0.005em;
+    line-height: 1.3;
+    transition: color 0.15s ease;
+  }
+  .post-meta {
+    color: var(--muted);
+    font-size: 0.88em;
+    margin: 0 0 0.55em;
+    font-variant-numeric: tabular-nums;
+  }
+  .post-meta .dot { margin: 0 0.5em; }
+  .post-desc {
+    color: #333;
+    margin: 0;
+    font-size: 0.98em;
+  }
+
+  .about {
+    margin-top: 4em;
+    padding-top: 2em;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 0.92em;
+  }
+  .about p { margin: 0.6em 0; }
+  .about a { color: var(--link); }
+</style>
 </head>
 <body>
-  <main>
-    <h1>Matteo Casolari — Blog</h1>
-    <p>Notes, essays, and experiments.</p>
+<main>
 
-    <h2>Posts</h2>
-    <ul>
-      <li>
-        <a href="/posts/how-often-does-alice-show-up/">
-          How Often Does Alice Actually Show Up? — A Bayesian board-game puzzle
-        </a>
-      </li>
-    </ul>
-  </main>
+<header>
+  <h1>Matteo Casolari</h1>
+  <p class="tagline">Notes, essays, and experiments.</p>
+</header>
+
+<h2>Posts</h2>
+<ul class="posts">
+  <li>
+    <a class="post-link" href="posts/how-often-does-alice-show-up/index.html">
+      <p class="post-title">How Often Does Alice Actually Show Up?</p>
+      <p class="post-meta">May 2026<span class="dot">·</span>9 min read<span class="dot">·</span>interactive</p>
+      <p class="post-desc">A small Bayesian inference puzzle that started at board-game night. With interactive plots.</p>
+    </a>
+  </li>
+</ul>
+
+<section class="about">
+  <p>Written by Matteo Casolari. Best read with a coffee.</p>
+</section>
+
+</main>
 </body>
 </html>
