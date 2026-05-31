@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Often Does Alice Actually Show Up? — A Bayesian board-game puzzle</title>
+<meta name="description" content="A small Bayesian inference puzzle that started at board-game night. With interactive plots.">
+
+<script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']]
+    },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+  :root {
+    --fg: #1a1a1a;
+    --muted: #666;
+    --bg: #fdfdfd;
+    --rule: #e4e4e4;
+    --code-bg: #f4f4f4;
+    --accent: #c0392b;   /* posterior mean — red */
+    --naive: #2c3e50;    /* naive estimate — dark blue */
+    --bar-in: #2980b9;
+    --bar-out: #c5d3dd;
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.65;
+    font-size: 17px;
+  }
+  main { max-width: 740px; margin: 0 auto; padding: 3.5em 1.2em 5em; }
+  h1 { font-size: 2.1em; line-height: 1.2; margin: 0 0 0.2em; letter-spacing: -0.01em; }
+  h2 { font-size: 1.45em; margin-top: 2.6em; letter-spacing: -0.005em; }
+  h3 { font-size: 1.12em; margin-top: 1.8em; }
+  .lede { color: var(--muted); margin-top: 0; font-size: 1.1em; }
+  .meta { color: var(--muted); font-size: 0.9em; margin-bottom: 2.5em; }
+  hr { border: none; border-top: 1px solid var(--rule); margin: 2.5em 0; }
+  blockquote { border-left: 3px solid var(--rule); margin: 1.5em 0; padding: 0.1em 1em; color: #333; }
+  a { color: #2563eb; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.92em; background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+  pre { background: var(--code-bg); padding: 0.9em 1em; overflow-x: auto; border-radius: 4px; font-size: 0.92em; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; margin: 1em 0; font-size: 0.94em; font-variant-numeric: tabular-nums; }
+  th, td { padding: 0.45em 0.95em; text-align: right; border-bottom: 1px solid var(--rule); }
+  th { border-bottom: 2px solid #aaa; font-weight: 600; }
+  figure { margin: 1.8em 0; }
+  figcaption { font-size: 0.88em; color: var(--muted); margin-top: 0.5em; line-height: 1.5; }
+  .widget { margin: 1.6em 0; padding: 1.2em 1.2em 0.6em; border: 1px solid var(--rule); border-radius: 8px; background: #fafafa; }
+  .widget h3 { margin-top: 0.2em; }
+  .controls { display: grid; grid-template-columns: auto 1fr auto; gap: 0.55em 0.9em; align-items: center; margin: 0.6em 0 0.9em; }
+  .controls label { font-family: ui-monospace, monospace; font-size: 0.95em; color: #333; }
+  .controls input[type=range] { width: 100%; accent-color: var(--bar-in); }
+  .controls .val { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.95em; color: var(--accent); min-width: 3em; text-align: right; }
+  .summary { font-family: ui-monospace, monospace; font-size: 0.9em; color: #333; margin: 0.2em 0 0.8em; font-variant-numeric: tabular-nums; }
+  .summary span { display: inline-block; margin-right: 1.2em; }
+  .legend { font-size: 0.85em; color: var(--muted); margin: 0.4em 0 0; }
+  .legend .dot { display: inline-block; width: 0.7em; height: 0.7em; border-radius: 50%; vertical-align: middle; margin-right: 0.3em; }
+  .dot-acc { background: var(--accent); }
+  .dot-naive { background: var(--naive); }
+  .dot-in { background: var(--bar-in); }
+  .dot-out { background: var(--bar-out); }
+  .plot { width: 100%; min-height: 320px; }
+  ul li, ol li { margin: 0.3em 0; }
+  .footer { color: var(--muted); font-size: 0.88em; margin-top: 4em; padding-top: 1.5em; border-top: 1px solid var(--rule); }
+</style>
+</head>
+<body>
+<main>
+
+<h1>How Often Does Alice Actually Show Up?</h1>
+<p class="lede">A small Bayesian puzzle that started at board-game night.</p>
+<p class="meta">May 2026 · 12 min read · interactive</p>
+
+<h2>A puzzle that started on the couch</h2>
+
+<p>Our board-game group meets once a week. Every week of the year. Fifty-two evenings of dice, hidden cards, and someone insisting the rules really do work that way.</p>
+
+<p>I don't make it to every night — life, travel, the occasional cold. But I noticed something. Whenever I <em>do</em> show up, Alice is almost always there too. The first time I clocked it I assumed it was a coincidence. By the tenth time, it stopped being one.</p>
+
+<p>So I started wondering. Out of the 52 nights this year, how many did Alice actually attend? I personally went to ten of them, and she was there in eight. Could I extrapolate from that?</p>
+
+<p>Did Alice attend 40 game nights? 45? Almost every single one?</p>
+
+<p>This sounds like a statistics exercise, but the way to enter it is as a small puzzle. We know something concrete (eight out of ten), we have an honest question (how often does she go in total), and we want an answer with the right amount of confidence — neither overcommitted nor evasive.</p>
+
+<p>Let me show you what I found.</p>
+
+<hr>
+
+<h2>The variables, written down once</h2>
+
+<p>To keep the page tidy, let me fix the notation:</p>
+<ul>
+  <li>$M = 52$ — total game nights in the year.</li>
+  <li>$N$ — nights <em>I</em> attended.</li>
+  <li>$k$ — nights I attended where Alice was also there.</li>
+  <li>$i$ — the unknown total nights Alice attended (what we want to estimate).</li>
+</ul>
+
+<p>The first three are observed. The last one is what we're hunting.</p>
+
+<p>A small but important sanity check: $i$ can't be smaller than $k$ (Alice can't attend fewer nights than the number of times I already saw her), and $i$ can't be so large that it contradicts my misses either. Formally:</p>
+
+$$ k \le i \le M - (N - k) $$
+
+<p>Keep that range in mind. Every plot and slider in this article enforces it.</p>
+
+<hr>
+
+<h2>First instinct: just scale it up</h2>
+
+<p>If I went to 10 nights and Alice was at 8 of them, that's an 80% hit rate. Extrapolating to the full year:</p>
+
+$$ \hat i_{\text{naive}} = M \cdot \frac{k}{N} = 52 \cdot \frac{8}{10} = 41.6 $$
+
+<p>So, somewhere around 42 nights. That's not a bad first answer. It's the same move pollsters make: assume your sample looks like the population, multiply by the population size, done.</p>
+
+<p>And honestly, for a quick estimate over coffee, this is fine. The trouble starts when you ask the next question.</p>
+
+<hr>
+
+<h2>Why a single number feels off</h2>
+
+<p>Pretend I'd told you a different version of the story.</p>
+
+<blockquote>"I went to 40 game nights and Alice was at 32 of them."</blockquote>
+
+<p>Same 80% ratio. Same naive estimate of 41.6.</p>
+
+<p>But the two situations are not equally convincing. Eight-out-of-ten is the kind of thing that happens to me by sheer luck on a regular Tuesday. Thirty-two-out-of-forty is a regularity that would survive most reasonable doubts.</p>
+
+<p>A single number — 41.6, 42, "about 40" — can't tell those apart. They both round to the same answer, and yet one is a guess and the other is a near-certainty.</p>
+
+<p>What we actually want is a distribution. A picture of <em>which values of $i$ are plausible</em>, given what I saw.</p>
+
+<hr>
+
+<h2>Reframing the problem</h2>
+
+<p>Here is where the angle of attack changes, and it's worth slowing down for.</p>
+
+<p>The 52 game nights of the year already exist. They are not a hypothetical population I'm sampling from forever. They're a finite, fixed set. Each one of them either had Alice in it or didn't — past tense. The unknown $i$ is the number of <em>those specific 52 nights</em> that included Alice.</p>
+
+<p>I attended a subset of them: $N$ nights, drawn however my schedule worked out. Among those, I saw Alice $k$ times.</p>
+
+<p>Stated this way, the structure should feel familiar to anyone who's ever heard of an urn problem. We have a population of 52 objects, $i$ of which are "Alice-attended" and $52 - i$ of which aren't. I drew $N$ of them without replacement and want to know how my sample relates to the urn.</p>
+
+<p>That's the hypergeometric distribution.</p>
+
+<hr>
+
+<h2>The likelihood, written down</h2>
+
+<p>For a fixed value of $i$, the probability that I would have seen Alice on exactly $k$ of my $N$ nights is:</p>
+
+$$ P(k \mid i) = \frac{\binom{i}{k}\binom{M - i}{N - k}}{\binom{M}{N}} $$
+
+<p>You can read the numerator as: "ways to pick $k$ of Alice's nights to show up to, times ways to fill out the rest of my attendance from non-Alice nights." The denominator is just "all possible ways my $N$ nights could land on the calendar."</p>
+
+<p>If you're allergic to binomial coefficients, here's the only thing you have to keep: this formula gives, for every candidate value of $i$, the probability of the data I actually observed. It's a function of $i$, viewed through the keyhole of $k$.</p>
+
+<p>In code, it's a single line:</p>
+
+<pre><code>from scipy.stats import hypergeom
+likelihood = hypergeom.pmf(k, M, i, N)</code></pre>
+
+<hr>
+
+<h2>The Bayesian update</h2>
+
+<p>Now we play the Bayesian move. We had a question — "what is $i$?" — and we have a likelihood telling us how compatible each candidate value of $i$ is with the data.</p>
+
+<p>Bayes' rule:</p>
+
+$$ P(i \mid k) \;\propto\; P(k \mid i)\,P(i) $$
+
+<p>The pieces:</p>
+<ul>
+  <li>$P(i)$ — the prior. Before seeing any nights, what did I believe about Alice's attendance? With no information, the honest answer is "I don't know," which translates to a uniform distribution over $\{0, 1, \dots, 52\}$.</li>
+  <li>$P(k \mid i)$ — the likelihood we just wrote down.</li>
+  <li>$P(i \mid k)$ — the posterior. What we actually want.</li>
+</ul>
+
+<p>Because the prior is flat, the posterior is just the likelihood, renormalized so it sums to one. In code:</p>
+
+<pre><code>import numpy as np
+import pandas as pd
+from scipy.stats import hypergeom
+
+M, N, k = 52, 30, 28
+posterior = pd.Series([hypergeom.pmf(k, M, i, N) for i in range(M + 1)])
+posterior /= posterior.sum()</code></pre>
+
+<p>That's the whole inference. Three lines.</p>
+
+<figure>
+  <div id="fig-1" class="plot"></div>
+  <figcaption><strong>Figure 1.</strong> Posterior distribution over Alice's total attendance, for the canonical case $M=52$, $N=30$, $k=28$. The red dashed line marks the posterior expected value, $E[i \mid k] \approx 47.9$; the dark blue dotted line marks the naive extrapolation $Mk/N \approx 48.5$. Shaded bars cover the 90% credible interval $[45, 50]$.</figcaption>
+</figure>
+
+<hr>
+
+<h2>A single number, if you really need one</h2>
+
+<p>After staring at the bars for a while, you'll probably notice yourself doing the thing the picture was supposed to prevent: collapsing it to a single number.</p>
+
+<p>That's fine. We just want to do it deliberately.</p>
+
+<p>The posterior gives us a full distribution; the natural one-number summary is the posterior mean:</p>
+
+$$ E[i \mid k] \;=\; \sum_{i=0}^{M} i \cdot P(i \mid k) $$
+
+<p>For the notebook example ($N = 30$, $k = 28$):</p>
+
+$$ E[i \mid k] \approx 47.94 $$
+
+<p>Compare that to the naive estimate, $M \cdot k / N = 52 \cdot 28/30 \approx 48.53$. They agree to within a fraction of a night.</p>
+
+<p>That's not a coincidence. When the sample is large relative to $M$ and the observed proportion is moderate, the posterior mean is very close to the simple extrapolation. The naive answer wasn't <em>wrong</em>; it was just missing the uncertainty.</p>
+
+<p>The Bayesian framing pays off when the sample is small, when the proportion is extreme, or when you want a credible interval to hand back along with the point estimate.</p>
+
+<hr>
+
+<h2>What changes when the sample shrinks</h2>
+
+<p>This is the experiment I find most clarifying. Take a fixed ratio — say, 80% — and shrink $N$ from 40 down to 5. The naive estimate stays pinned at 41.6 the whole time. The posterior tells a different story.</p>
+
+<table>
+  <thead>
+    <tr><th>$N$</th><th>$k$</th><th>naive $Mk/N$</th><th>$E[i \mid k]$</th><th>90% interval</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>5</td><td>4</td><td>41.6</td><td>37.6</td><td>[23, 49]</td></tr>
+    <tr><td>10</td><td>8</td><td>41.6</td><td>39.5</td><td>[29, 48]</td></tr>
+    <tr><td>20</td><td>16</td><td>41.6</td><td>40.7</td><td>[34, 46]</td></tr>
+    <tr><td>40</td><td>32</td><td>41.6</td><td>41.4</td><td>[39, 44]</td></tr>
+  </tbody>
+</table>
+<p style="font-size: 0.88em; color: var(--muted); margin-top: -0.2em;"><strong>Table 1.</strong> Same observed proportion (80%), four different sample sizes. The point estimate barely moves; the interval collapses.</p>
+
+<p>Two things to notice.</p>
+
+<p>First, the posterior mean drifts slightly downward as $N$ shrinks. That's the prior leaning back toward the middle when the data gets thin — a soft, automatic skepticism of extreme ratios from tiny samples.</p>
+
+<p>Second — and this is the headline — the 90% interval at $N=5$ spans <strong>27 nights</strong> of the year. At $N=40$, it's down to <strong>six</strong>. The naive estimator can't see that difference. The posterior can.</p>
+
+<figure>
+  <div id="fig-2" class="plot"></div>
+  <figcaption><strong>Figure 2.</strong> Four posteriors for the same observed ratio $k/N = 0.8$, at $N = 5, 10, 20, 40$. Same peak location; very different confidence.</figcaption>
+</figure>
+
+<hr>
+
+<h2>Interactive exploration</h2>
+
+<p>The rest is for you to play with. Move the sliders below and watch the posterior reshape itself in real time. The constraint $M > N \ge k$ is enforced automatically — you can't ask an impossible question.</p>
+
+<h3>Widget 1 — The full posterior</h3>
+
+<div class="widget">
+  <div class="controls">
+    <label for="w1-M">M</label>
+    <input id="w1-M" type="range" min="10" max="100" value="52">
+    <span class="val" id="w1-M-val">52</span>
+
+    <label for="w1-N">N</label>
+    <input id="w1-N" type="range" min="1" max="51" value="10">
+    <span class="val" id="w1-N-val">10</span>
+
+    <label for="w1-k">k</label>
+    <input id="w1-k" type="range" min="0" max="10" value="8">
+    <span class="val" id="w1-k-val">8</span>
+  </div>
+  <div class="summary" id="w1-summary"></div>
+  <div id="w1-plot" class="plot"></div>
+  <p class="legend">
+    <span class="dot dot-in"></span>90% credible interval &nbsp;
+    <span class="dot dot-out"></span>outside interval &nbsp;
+    <span class="dot dot-acc"></span>$E[i \mid k]$ &nbsp;
+    <span class="dot dot-naive"></span>naive $Mk/N$
+  </p>
+</div>
+
+<p>Try the experiments the brief asked for:</p>
+<ul>
+  <li><strong>$N = 10, k = 10$</strong> — I saw Alice every single time I came. The naive estimate says 52. The posterior says $\approx 48.5$, with a 90% interval of $[41, 52]$. Even a perfect hit rate doesn't pin her down.</li>
+  <li><strong>$N = 10, k = 0$</strong> — I never saw her. Naive: 0. Posterior mean: $\approx 3.5$, with mass spread up to 11. Absence of evidence isn't evidence of absence.</li>
+  <li><strong>$N = 30, k = 15$</strong> — Honest 50/50. Posterior mean: 26.0 (matches the naive estimate exactly), 90% interval $[21, 31]$.</li>
+  <li><strong>$N = 30, k = 28$</strong> — The notebook example. Mass packed between 45 and 50.</li>
+</ul>
+
+<h3>Widget 2 — Same ratio, different sample sizes</h3>
+
+<p>Hold the ratio fixed and look at the four posteriors at $N = 5, 10, 20, 40$ side by side. This is Table 1, made interactive: drag the ratio slider and watch all four curves slide together while their widths stay characteristically different.</p>
+
+<div class="widget">
+  <div class="controls">
+    <label for="w2-M">M</label>
+    <input id="w2-M" type="range" min="40" max="100" value="52">
+    <span class="val" id="w2-M-val">52</span>
+
+    <label for="w2-r">ratio $k/N$</label>
+    <input id="w2-r" type="range" min="0" max="100" value="80">
+    <span class="val" id="w2-r-val">0.80</span>
+  </div>
+  <div id="w2-plot" class="plot"></div>
+  <p class="legend">Each curve is a posterior at fixed $k/N$. Narrow curves = small samples translating into wide uncertainty.</p>
+</div>
+
+<h3>Widget 3 — Uncertainty shrinks with sample size</h3>
+
+<p>Same idea, condensed. Fix the ratio. For every value of $N$ from 1 to $M-1$, plot the posterior mean as a dot and the 90% credible interval as a vertical bar. The naive estimate sits on top as a flat reference line. The bars shrink as $N$ grows; the naive line doesn't care.</p>
+
+<div class="widget">
+  <div class="controls">
+    <label for="w3-M">M</label>
+    <input id="w3-M" type="range" min="40" max="100" value="52">
+    <span class="val" id="w3-M-val">52</span>
+
+    <label for="w3-r">ratio $k/N$</label>
+    <input id="w3-r" type="range" min="0" max="100" value="80">
+    <span class="val" id="w3-r-val">0.80</span>
+  </div>
+  <div id="w3-plot" class="plot"></div>
+  <p class="legend">
+    <span class="dot dot-acc"></span>$E[i \mid k]$ ± 90% interval &nbsp;
+    <span class="dot dot-naive"></span>naive $Mk/N$
+  </p>
+</div>
+
+<hr>
+
+<h2>What I want to remember from this</h2>
+
+<p>A few things, in roughly the order I'd argue them at the next game night:</p>
+<ul>
+  <li><strong>Point estimates hide uncertainty.</strong> "About 40 nights" is a perfectly reasonable answer that doesn't tell you whether you should bet your rent on it.</li>
+  <li><strong>Small samples generate confident-looking ratios that don't deserve confidence.</strong> Eight out of ten is not eighty out of a hundred. The Bayesian view makes this visible automatically; the naive ratio doesn't.</li>
+  <li><strong>The right model often hides in the framing.</strong> "How often does Alice go?" doesn't sound like an urn problem until you remember that the year already happened and the 52 nights are a fixed set. Then it almost has to be hypergeometric.</li>
+  <li><strong>Bayesian inference returns a distribution, not a number.</strong> You can always collapse a distribution down later. You can't expand a number out.</li>
+</ul>
+
+<p>Three lines of code. One reframing. A more honest answer to a question that turns out to be a lot like counting grizzly bears, or estimating how many bugs are still hiding in a piece of software you thought you'd finished testing.</p>
+
+<p>Alice, for the record, came to 48 of the 52 nights. I asked her.</p>
+
+<p class="footer">Code: the original exploration lives in <code>board_game_dilemma.ipynb</code>. All charts on this page are computed in your browser — no server, no precomputed images. The math is rendered with MathJax; the plots with Plotly.</p>
+
+</main>
+
+<script>
+/* ---------- Hypergeometric math ---------- */
+
+const logFactCache = [0, 0];
+function logFact(n) {
+  while (logFactCache.length <= n) {
+    const idx = logFactCache.length;
+    logFactCache.push(logFactCache[idx - 1] + Math.log(idx));
+  }
+  return logFactCache[n];
+}
+function logChoose(n, k) {
+  if (k < 0 || k > n) return -Infinity;
+  return logFact(n) - logFact(k) - logFact(n - k);
+}
+function hypergeomPmf(k, M, i, N) {
+  if (i < 0 || i > M) return 0;
+  if (k > i || k > N) return 0;
+  if (N - k > M - i) return 0;
+  return Math.exp(logChoose(i, k) + logChoose(M - i, N - k) - logChoose(M, N));
+}
+function posterior(M, N, k) {
+  const pmf = new Array(M + 1);
+  let total = 0;
+  for (let i = 0; i <= M; i++) {
+    const v = hypergeomPmf(k, M, i, N);
+    pmf[i] = isFinite(v) ? v : 0;
+    total += pmf[i];
+  }
+  if (total === 0) return pmf;
+  for (let i = 0; i <= M; i++) pmf[i] /= total;
+  return pmf;
+}
+function expectedValue(pmf) {
+  let ev = 0;
+  for (let i = 0; i < pmf.length; i++) ev += i * pmf[i];
+  return ev;
+}
+function credibleInterval(pmf, level) {
+  const tail = (1 - level) / 2;
+  let cum = 0, lo = 0, hi = pmf.length - 1;
+  for (let i = 0; i < pmf.length; i++) {
+    cum += pmf[i];
+    if (cum >= tail) { lo = i; break; }
+  }
+  cum = 0;
+  for (let i = 0; i < pmf.length; i++) {
+    cum += pmf[i];
+    if (cum >= 1 - tail) { hi = i; break; }
+  }
+  return [lo, hi];
+}
+
+/* ---------- Plot helpers ---------- */
+
+const COLORS = {
+  accent: '#c0392b',
+  naive: '#2c3e50',
+  barIn: '#2980b9',
+  barOut: '#c5d3dd',
+};
+
+const PLOT_CONFIG = { displayModeBar: false, responsive: true };
+
+function basicLayout(M) {
+  return {
+    margin: { l: 50, r: 20, t: 10, b: 45 },
+    xaxis: { title: { text: 'i (Alice\'s total nights)', standoff: 10 }, range: [-0.5, M + 0.5] },
+    yaxis: { title: 'P(i | k)', rangemode: 'tozero' },
+    showlegend: false,
+    height: 360,
+    plot_bgcolor: '#fdfdfd',
+    paper_bgcolor: 'transparent',
+    font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', size: 12, color: '#333' },
+  };
+}
+
+function plotPosterior(divId, M, N, k) {
+  const pmf = posterior(M, N, k);
+  const i_vals = pmf.map((_, idx) => idx);
+  const ev = expectedValue(pmf);
+  const naive = N > 0 ? (M * k / N) : 0;
+  const [lo, hi] = credibleInterval(pmf, 0.9);
+  const colors = pmf.map((_, i) => (i >= lo && i <= hi) ? COLORS.barIn : COLORS.barOut);
+  const yMax = Math.max(...pmf) * 1.18 || 0.1;
+
+  const layout = basicLayout(M);
+  layout.yaxis.range = [0, yMax];
+  layout.shapes = [
+    { type: 'line', x0: ev, x1: ev, y0: 0, y1: yMax,
+      line: { color: COLORS.accent, dash: 'dash', width: 2 } },
+    { type: 'line', x0: naive, x1: naive, y0: 0, y1: yMax,
+      line: { color: COLORS.naive, dash: 'dot', width: 2 } },
+  ];
+
+  const data = [{
+    type: 'bar',
+    x: i_vals,
+    y: pmf,
+    marker: { color: colors, line: { width: 0 } },
+    hovertemplate: 'i = %{x}<br>P = %{y:.4f}<extra></extra>',
+  }];
+
+  Plotly.react(divId, data, layout, PLOT_CONFIG);
+  return { ev, naive, lo, hi };
+}
+
+function plotOverlay(divId, M, ratio) {
+  const Ns = [5, 10, 20, 40].filter(n => n < M);
+  const palette = ['#c5d3dd', '#9bb6c8', '#5d8aa8', '#1f5670'];
+  const traces = [];
+  let yMax = 0;
+  Ns.forEach((N, idx) => {
+    const k = Math.round(ratio * N);
+    const pmf = posterior(M, N, k);
+    yMax = Math.max(yMax, ...pmf);
+    traces.push({
+      type: 'scatter',
+      mode: 'lines',
+      x: pmf.map((_, i) => i),
+      y: pmf,
+      line: { color: palette[idx], width: 2.5, shape: 'spline', smoothing: 0.6 },
+      fill: 'tozeroy',
+      fillcolor: palette[idx] + '33',
+      name: `N = ${N}, k = ${k}`,
+      hovertemplate: `N=${N}, k=${k}<br>i=%{x}<br>P=%{y:.4f}<extra></extra>`,
+    });
+  });
+  const layout = basicLayout(M);
+  layout.showlegend = true;
+  layout.legend = { x: 0.01, y: 0.99, bgcolor: 'rgba(255,255,255,0.7)', font: { size: 11 } };
+  layout.yaxis.range = [0, yMax * 1.15 || 0.1];
+  layout.height = 380;
+  Plotly.react(divId, traces, layout, PLOT_CONFIG);
+}
+
+function plotUncertaintyVsN(divId, M, ratio) {
+  const Ns = [], evs = [], los = [], his = [];
+  for (let N = 1; N <= M - 1; N++) {
+    const k = Math.round(ratio * N);
+    const pmf = posterior(M, N, k);
+    const ev = expectedValue(pmf);
+    const [lo, hi] = credibleInterval(pmf, 0.9);
+    Ns.push(N);
+    evs.push(ev);
+    los.push(ev - lo);
+    his.push(hi - ev);
+  }
+  const naive = M * ratio;
+  const data = [
+    {
+      type: 'scatter',
+      mode: 'markers',
+      x: Ns,
+      y: evs,
+      error_y: { type: 'data', symmetric: false, array: his, arrayminus: los, color: COLORS.accent, thickness: 1.2, width: 2 },
+      marker: { color: COLORS.accent, size: 5 },
+      name: 'E[i | k] ± 90% interval',
+      hovertemplate: 'N=%{x}<br>E[i|k]=%{y:.2f}<extra></extra>',
+    },
+    {
+      type: 'scatter',
+      mode: 'lines',
+      x: [1, M - 1],
+      y: [naive, naive],
+      line: { color: COLORS.naive, dash: 'dot', width: 2 },
+      name: 'naive Mk/N',
+      hoverinfo: 'skip',
+    },
+  ];
+  const layout = {
+    margin: { l: 50, r: 20, t: 10, b: 45 },
+    xaxis: { title: { text: 'N (nights I attended)', standoff: 10 }, range: [0, M] },
+    yaxis: { title: 'i', range: [0, M] },
+    showlegend: false,
+    height: 360,
+    plot_bgcolor: '#fdfdfd',
+    paper_bgcolor: 'transparent',
+    font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', size: 12, color: '#333' },
+  };
+  Plotly.react(divId, data, layout, PLOT_CONFIG);
+}
+
+/* ---------- Widget 1: full posterior with M/N/k sliders ---------- */
+
+function setupWidget1() {
+  const mEl = document.getElementById('w1-M');
+  const nEl = document.getElementById('w1-N');
+  const kEl = document.getElementById('w1-k');
+  const mVal = document.getElementById('w1-M-val');
+  const nVal = document.getElementById('w1-N-val');
+  const kVal = document.getElementById('w1-k-val');
+  const summary = document.getElementById('w1-summary');
+
+  function update() {
+    let M = +mEl.value;
+    nEl.max = M - 1;
+    if (+nEl.value > M - 1) nEl.value = M - 1;
+    let N = +nEl.value;
+    kEl.max = N;
+    if (+kEl.value > N) kEl.value = N;
+    let k = +kEl.value;
+
+    mVal.textContent = M;
+    nVal.textContent = N;
+    kVal.textContent = k;
+
+    const { ev, naive, lo, hi } = plotPosterior('w1-plot', M, N, k);
+    summary.innerHTML =
+      `<span>E[i | k] = <strong style="color:${COLORS.accent}">${ev.toFixed(2)}</strong></span>` +
+      `<span>naive Mk/N = <strong style="color:${COLORS.naive}">${naive.toFixed(2)}</strong></span>` +
+      `<span>90% interval: [${lo}, ${hi}]</span>`;
+  }
+
+  [mEl, nEl, kEl].forEach(el => el.addEventListener('input', update));
+  update();
+}
+
+/* ---------- Widget 2: same-ratio overlay ---------- */
+
+function setupWidget2() {
+  const mEl = document.getElementById('w2-M');
+  const rEl = document.getElementById('w2-r');
+  const mVal = document.getElementById('w2-M-val');
+  const rVal = document.getElementById('w2-r-val');
+
+  function update() {
+    const M = +mEl.value;
+    const r = +rEl.value / 100;
+    mVal.textContent = M;
+    rVal.textContent = r.toFixed(2);
+    plotOverlay('w2-plot', M, r);
+  }
+  [mEl, rEl].forEach(el => el.addEventListener('input', update));
+  update();
+}
+
+/* ---------- Widget 3: uncertainty vs N ---------- */
+
+function setupWidget3() {
+  const mEl = document.getElementById('w3-M');
+  const rEl = document.getElementById('w3-r');
+  const mVal = document.getElementById('w3-M-val');
+  const rVal = document.getElementById('w3-r-val');
+
+  function update() {
+    const M = +mEl.value;
+    const r = +rEl.value / 100;
+    mVal.textContent = M;
+    rVal.textContent = r.toFixed(2);
+    plotUncertaintyVsN('w3-plot', M, r);
+  }
+  [mEl, rEl].forEach(el => el.addEventListener('input', update));
+  update();
+}
+
+/* ---------- Static figures ---------- */
+
+function renderStaticFigures() {
+  // Figure 1: M=52, N=30, k=28
+  plotPosterior('fig-1', 52, 30, 28);
+
+  // Figure 2: overlay at ratio 0.8
+  plotOverlay('fig-2', 52, 0.8);
+}
+
+/* ---------- Boot ---------- */
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderStaticFigures();
+  setupWidget1();
+  setupWidget2();
+  setupWidget3();
+});
+</script>
+
+</body>
+</html>
