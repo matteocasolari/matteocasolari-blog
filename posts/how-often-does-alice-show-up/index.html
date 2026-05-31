@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How Often Does Alice Actually Show Up? — A Bayesian board-game puzzle</title>
+<title>How Often Does Alice Actually Show Up? A Bayesian board-game puzzle</title>
 <meta name="description" content="A small Bayesian inference puzzle that started at board-game night. With interactive plots.">
 
 <script>
@@ -25,8 +25,8 @@
     --bg: #fdfdfd;
     --rule: #e4e4e4;
     --code-bg: #f4f4f4;
-    --accent: #c0392b;   /* posterior mean — red */
-    --naive: #2c3e50;    /* naive estimate — dark blue */
+    --accent: #c0392b;   /* posterior mean: red */
+    --naive: #2c3e50;    /* naive estimate: dark blue */
     --bar-in: #2980b9;
     --bar-out: #c5d3dd;
   }
@@ -81,19 +81,19 @@
 
 <h1>How Often Does Alice Actually Show Up?</h1>
 <p class="lede">A small Bayesian puzzle that started at board-game night.</p>
-<p class="meta">May 2026 · 12 min read · interactive</p>
+<p class="meta">May 2026 · 9 min read · interactive</p>
 
 <h2>A puzzle that started on the couch</h2>
 
 <p>Our board-game group meets once a week. Every week of the year. Fifty-two evenings of dice, hidden cards, and someone insisting the rules really do work that way.</p>
 
-<p>I don't make it to every night — life, travel, the occasional cold. But I noticed something. Whenever I <em>do</em> show up, Alice is almost always there too. The first time I clocked it I assumed it was a coincidence. By the tenth time, it stopped being one.</p>
+<p>I don't make it to every night: life, travel, the occasional cold. But I noticed something. Whenever I <em>do</em> show up, Alice is almost always there too. The first time I clocked it I assumed it was a coincidence. By the tenth time, it stopped being one.</p>
 
 <p>So I started wondering. Out of the 52 nights this year, how many did Alice actually attend? I personally went to ten of them, and she was there in eight. Could I extrapolate from that?</p>
 
 <p>Did Alice attend 40 game nights? 45? Almost every single one?</p>
 
-<p>This sounds like a statistics exercise, but the way to enter it is as a small puzzle. We know something concrete (eight out of ten), we have an honest question (how often does she go in total), and we want an answer with the right amount of confidence — neither overcommitted nor evasive.</p>
+<p>This could make a very interesting statistical exercise, but the nicer way into it is as a small puzzle. We know something concrete (eight out of ten), we have an honest question (how often does she go in total), and we want an answer with the right amount of confidence, neither overcommitted nor evasive.</p>
 
 <p>Let me show you what I found.</p>
 
@@ -103,10 +103,10 @@
 
 <p>To keep the page tidy, let me fix the notation:</p>
 <ul>
-  <li>$M = 52$ — total game nights in the year.</li>
-  <li>$N$ — nights <em>I</em> attended.</li>
-  <li>$k$ — nights I attended where Alice was also there.</li>
-  <li>$i$ — the unknown total nights Alice attended (what we want to estimate).</li>
+  <li>$M = 52$: total game nights in the year.</li>
+  <li>$N$: nights <em>I</em> attended.</li>
+  <li>$k$: nights I attended where Alice was also there.</li>
+  <li>$i$: the unknown total nights Alice attended (what we want to estimate).</li>
 </ul>
 
 <p>The first three are observed. The last one is what we're hunting.</p>
@@ -141,7 +141,7 @@ $$ \hat i_{\text{naive}} = M \cdot \frac{k}{N} = 52 \cdot \frac{8}{10} = 41.6 $$
 
 <p>But the two situations are not equally convincing. Eight-out-of-ten is the kind of thing that happens to me by sheer luck on a regular Tuesday. Thirty-two-out-of-forty is a regularity that would survive most reasonable doubts.</p>
 
-<p>A single number — 41.6, 42, "about 40" — can't tell those apart. They both round to the same answer, and yet one is a guess and the other is a near-certainty.</p>
+<p>A single number (41.6, 42, "about 40") can't tell those apart. They both round to the same answer, and yet one is a guess and the other is a near-certainty.</p>
 
 <p>What we actually want is a distribution. A picture of <em>which values of $i$ are plausible</em>, given what I saw.</p>
 
@@ -151,7 +151,7 @@ $$ \hat i_{\text{naive}} = M \cdot \frac{k}{N} = 52 \cdot \frac{8}{10} = 41.6 $$
 
 <p>Here is where the angle of attack changes, and it's worth slowing down for.</p>
 
-<p>The 52 game nights of the year already exist. They are not a hypothetical population I'm sampling from forever. They're a finite, fixed set. Each one of them either had Alice in it or didn't — past tense. The unknown $i$ is the number of <em>those specific 52 nights</em> that included Alice.</p>
+<p>The 52 game nights of the year already exist. They are not a hypothetical population I'm sampling from forever. They're a finite, fixed set. Each one of them either had Alice in it or didn't, past tense. The unknown $i$ is the number of <em>those specific 52 nights</em> that included Alice.</p>
 
 <p>I attended a subset of them: $N$ nights, drawn however my schedule worked out. Among those, I saw Alice $k$ times.</p>
 
@@ -163,13 +163,19 @@ $$ \hat i_{\text{naive}} = M \cdot \frac{k}{N} = 52 \cdot \frac{8}{10} = 41.6 $$
 
 <h2>The likelihood, written down</h2>
 
-<p>For a fixed value of $i$, the probability that I would have seen Alice on exactly $k$ of my $N$ nights is:</p>
+<p>Here is the formula. The important thing is not its shape, but the question it is silently answering.</p>
 
 $$ P(k \mid i) = \frac{\binom{i}{k}\binom{M - i}{N - k}}{\binom{M}{N}} $$
 
-<p>You can read the numerator as: "ways to pick $k$ of Alice's nights to show up to, times ways to fill out the rest of my attendance from non-Alice nights." The denominator is just "all possible ways my $N$ nights could land on the calendar."</p>
+<p>In plain words, the formula computes the answer to a single, very specific question:</p>
 
-<p>If you're allergic to binomial coefficients, here's the only thing you have to keep: this formula gives, for every candidate value of $i$, the probability of the data I actually observed. It's a function of $i$, viewed through the keyhole of $k$.</p>
+<blockquote>If Alice really attended $i$ of the 52 game nights this year, how likely was I to have seen her exactly $k$ times in the $N$ nights I personally showed up to?</blockquote>
+
+<p>That is the entire purpose of the likelihood. It takes a hypothesis about Alice's total attendance, $i$, and tells me how compatible that hypothesis is with what I actually observed. Plug in $i = 30$ and ask: would my "8 out of 10" sightings be surprising in a world where Alice came to 30 nights? Plug in $i = 50$ and ask the same question for a world where she came to 50.</p>
+
+<p>If you want to peek inside the formula, the numerator counts the ways the observation could have happened: choose which $k$ of Alice's $i$ nights I happened to attend, and choose which $N - k$ of the remaining $M - i$ non-Alice nights I attended too. The denominator counts all the ways my $N$ nights could land on the calendar at all.</p>
+
+<p>So for every candidate value of $i$, the formula gives a number: the probability of the data I actually observed, under the assumption that Alice's true attendance was $i$. That is the keyhole through which we will look at every possible $i$ in the next section.</p>
 
 <p>In code, it's a single line:</p>
 
@@ -180,7 +186,7 @@ likelihood = hypergeom.pmf(k, M, i, N)</code></pre>
 
 <h2>The Bayesian update</h2>
 
-<p>Now we play the Bayesian move. We had a question — "what is $i$?" — and we have a likelihood telling us how compatible each candidate value of $i$ is with the data.</p>
+<p>Now we play the Bayesian move. We had a question ("what is $i$?") and we have a likelihood telling us how compatible each candidate value of $i$ is with the data.</p>
 
 <p>Bayes' rule:</p>
 
@@ -188,9 +194,9 @@ $$ P(i \mid k) \;\propto\; P(k \mid i)\,P(i) $$
 
 <p>The pieces:</p>
 <ul>
-  <li>$P(i)$ — the prior. Before seeing any nights, what did I believe about Alice's attendance? With no information, the honest answer is "I don't know," which translates to a uniform distribution over $\{0, 1, \dots, 52\}$.</li>
-  <li>$P(k \mid i)$ — the likelihood we just wrote down.</li>
-  <li>$P(i \mid k)$ — the posterior. What we actually want.</li>
+  <li>$P(i)$: the prior. Before seeing any nights, what did I believe about Alice's attendance? With no information, the honest answer is "I don't know," which translates to a uniform distribution over $\{0, 1, \dots, 52\}$.</li>
+  <li>$P(k \mid i)$: the likelihood we just wrote down.</li>
+  <li>$P(i \mid k)$: the posterior. What we actually want.</li>
 </ul>
 
 <p>Because the prior is flat, the posterior is just the likelihood, renormalized so it sums to one. In code:</p>
@@ -236,7 +242,7 @@ $$ E[i \mid k] \approx 47.94 $$
 
 <h2>What changes when the sample shrinks</h2>
 
-<p>This is the experiment I find most clarifying. Take a fixed ratio — say, 80% — and shrink $N$ from 40 down to 5. The naive estimate stays pinned at 41.6 the whole time. The posterior tells a different story.</p>
+<p>This is the experiment I find most clarifying. Take a fixed ratio, say 80%, and shrink $N$ from 40 down to 5. The naive estimate stays pinned at 41.6 the whole time. The posterior tells a different story.</p>
 
 <table>
   <thead>
@@ -253,9 +259,9 @@ $$ E[i \mid k] \approx 47.94 $$
 
 <p>Two things to notice.</p>
 
-<p>First, the posterior mean drifts slightly downward as $N$ shrinks. That's the prior leaning back toward the middle when the data gets thin — a soft, automatic skepticism of extreme ratios from tiny samples.</p>
+<p>First, the posterior mean drifts slightly downward as $N$ shrinks. That's the prior leaning back toward the middle when the data gets thin, a soft and automatic skepticism of extreme ratios from tiny samples.</p>
 
-<p>Second — and this is the headline — the 90% interval at $N=5$ spans <strong>27 nights</strong> of the year. At $N=40$, it's down to <strong>six</strong>. The naive estimator can't see that difference. The posterior can.</p>
+<p>Second, and this is the headline, the 90% interval at $N=5$ spans <strong>27 nights</strong> of the year. At $N=40$, it's down to <strong>six</strong>. The naive estimator can't see that difference. The posterior can.</p>
 
 <figure>
   <div id="fig-2" class="plot"></div>
@@ -266,9 +272,9 @@ $$ E[i \mid k] \approx 47.94 $$
 
 <h2>Interactive exploration</h2>
 
-<p>The rest is for you to play with. Move the sliders below and watch the posterior reshape itself in real time. The constraint $M > N \ge k$ is enforced automatically — you can't ask an impossible question.</p>
+<p>The rest is for you to play with. Move the sliders below and watch the posterior reshape itself in real time. The constraint $M > N \ge k$ is enforced automatically, so you can't ask an impossible question.</p>
 
-<h3>Widget 1 — The full posterior</h3>
+<h3>Widget 1: the full posterior</h3>
 
 <div class="widget">
   <div class="controls">
@@ -296,13 +302,13 @@ $$ E[i \mid k] \approx 47.94 $$
 
 <p>Try the experiments the brief asked for:</p>
 <ul>
-  <li><strong>$N = 10, k = 10$</strong> — I saw Alice every single time I came. The naive estimate says 52. The posterior says $\approx 48.5$, with a 90% interval of $[41, 52]$. Even a perfect hit rate doesn't pin her down.</li>
-  <li><strong>$N = 10, k = 0$</strong> — I never saw her. Naive: 0. Posterior mean: $\approx 3.5$, with mass spread up to 11. Absence of evidence isn't evidence of absence.</li>
-  <li><strong>$N = 30, k = 15$</strong> — Honest 50/50. Posterior mean: 26.0 (matches the naive estimate exactly), 90% interval $[21, 31]$.</li>
-  <li><strong>$N = 30, k = 28$</strong> — The notebook example. Mass packed between 45 and 50.</li>
+  <li><strong>$N = 10, k = 10$</strong>. I saw Alice every single time I came. The naive estimate says 52. The posterior says $\approx 48.5$, with a 90% interval of $[41, 52]$. Even a perfect hit rate doesn't pin her down.</li>
+  <li><strong>$N = 10, k = 0$</strong>. I never saw her. Naive: 0. Posterior mean: $\approx 3.5$, with mass spread up to 11. Absence of evidence isn't evidence of absence.</li>
+  <li><strong>$N = 30, k = 15$</strong>. Honest 50/50. Posterior mean: 26.0 (matches the naive estimate exactly), 90% interval $[21, 31]$.</li>
+  <li><strong>$N = 30, k = 28$</strong>. The notebook example. Mass packed between 45 and 50.</li>
 </ul>
 
-<h3>Widget 2 — Same ratio, different sample sizes</h3>
+<h3>Widget 2: same ratio, different sample sizes</h3>
 
 <p>Hold the ratio fixed and look at the four posteriors at $N = 5, 10, 20, 40$ side by side. This is Table 1, made interactive: drag the ratio slider and watch all four curves slide together while their widths stay characteristically different.</p>
 
@@ -318,27 +324,6 @@ $$ E[i \mid k] \approx 47.94 $$
   </div>
   <div id="w2-plot" class="plot"></div>
   <p class="legend">Each curve is a posterior at fixed $k/N$. Narrow curves = small samples translating into wide uncertainty.</p>
-</div>
-
-<h3>Widget 3 — Uncertainty shrinks with sample size</h3>
-
-<p>Same idea, condensed. Fix the ratio. For every value of $N$ from 1 to $M-1$, plot the posterior mean as a dot and the 90% credible interval as a vertical bar. The naive estimate sits on top as a flat reference line. The bars shrink as $N$ grows; the naive line doesn't care.</p>
-
-<div class="widget">
-  <div class="controls">
-    <label for="w3-M">M</label>
-    <input id="w3-M" type="range" min="40" max="100" value="52">
-    <span class="val" id="w3-M-val">52</span>
-
-    <label for="w3-r">ratio $k/N$</label>
-    <input id="w3-r" type="range" min="0" max="100" value="80">
-    <span class="val" id="w3-r-val">0.80</span>
-  </div>
-  <div id="w3-plot" class="plot"></div>
-  <p class="legend">
-    <span class="dot dot-acc"></span>$E[i \mid k]$ ± 90% interval &nbsp;
-    <span class="dot dot-naive"></span>naive $Mk/N$
-  </p>
 </div>
 
 <hr>
@@ -357,7 +342,7 @@ $$ E[i \mid k] \approx 47.94 $$
 
 <p>Alice, for the record, came to 48 of the 52 nights. I asked her.</p>
 
-<p class="footer">Code: the original exploration lives in <code>board_game_dilemma.ipynb</code>. All charts on this page are computed in your browser — no server, no precomputed images. The math is rendered with MathJax; the plots with Plotly.</p>
+<p class="footer">All charts on this page are computed in your browser, no server, no precomputed images. The math is rendered with MathJax; the plots with Plotly.</p>
 
 </main>
 
@@ -497,53 +482,6 @@ function plotOverlay(divId, M, ratio) {
   Plotly.react(divId, traces, layout, PLOT_CONFIG);
 }
 
-function plotUncertaintyVsN(divId, M, ratio) {
-  const Ns = [], evs = [], los = [], his = [];
-  for (let N = 1; N <= M - 1; N++) {
-    const k = Math.round(ratio * N);
-    const pmf = posterior(M, N, k);
-    const ev = expectedValue(pmf);
-    const [lo, hi] = credibleInterval(pmf, 0.9);
-    Ns.push(N);
-    evs.push(ev);
-    los.push(ev - lo);
-    his.push(hi - ev);
-  }
-  const naive = M * ratio;
-  const data = [
-    {
-      type: 'scatter',
-      mode: 'markers',
-      x: Ns,
-      y: evs,
-      error_y: { type: 'data', symmetric: false, array: his, arrayminus: los, color: COLORS.accent, thickness: 1.2, width: 2 },
-      marker: { color: COLORS.accent, size: 5 },
-      name: 'E[i | k] ± 90% interval',
-      hovertemplate: 'N=%{x}<br>E[i|k]=%{y:.2f}<extra></extra>',
-    },
-    {
-      type: 'scatter',
-      mode: 'lines',
-      x: [1, M - 1],
-      y: [naive, naive],
-      line: { color: COLORS.naive, dash: 'dot', width: 2 },
-      name: 'naive Mk/N',
-      hoverinfo: 'skip',
-    },
-  ];
-  const layout = {
-    margin: { l: 50, r: 20, t: 10, b: 45 },
-    xaxis: { title: { text: 'N (nights I attended)', standoff: 10 }, range: [0, M] },
-    yaxis: { title: 'i', range: [0, M] },
-    showlegend: false,
-    height: 360,
-    plot_bgcolor: '#fdfdfd',
-    paper_bgcolor: 'transparent',
-    font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', size: 12, color: '#333' },
-  };
-  Plotly.react(divId, data, layout, PLOT_CONFIG);
-}
-
 /* ---------- Widget 1: full posterior with M/N/k sliders ---------- */
 
 function setupWidget1() {
@@ -598,25 +536,6 @@ function setupWidget2() {
   update();
 }
 
-/* ---------- Widget 3: uncertainty vs N ---------- */
-
-function setupWidget3() {
-  const mEl = document.getElementById('w3-M');
-  const rEl = document.getElementById('w3-r');
-  const mVal = document.getElementById('w3-M-val');
-  const rVal = document.getElementById('w3-r-val');
-
-  function update() {
-    const M = +mEl.value;
-    const r = +rEl.value / 100;
-    mVal.textContent = M;
-    rVal.textContent = r.toFixed(2);
-    plotUncertaintyVsN('w3-plot', M, r);
-  }
-  [mEl, rEl].forEach(el => el.addEventListener('input', update));
-  update();
-}
-
 /* ---------- Static figures ---------- */
 
 function renderStaticFigures() {
@@ -633,7 +552,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderStaticFigures();
   setupWidget1();
   setupWidget2();
-  setupWidget3();
 });
 </script>
 
